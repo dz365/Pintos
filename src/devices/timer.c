@@ -92,8 +92,7 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  thread_sleep(start + ticks);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -172,6 +171,12 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+
+  if (thread_mlfqs && ticks % TIMER_FREQ == 0) {
+    thread_compute_load_avg();
+    thread_foreach(thread_compute_recent_cpu, NULL);
+  }
+  thread_wakeups(ticks);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

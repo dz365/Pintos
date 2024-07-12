@@ -4,6 +4,8 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "synch.h"
+#include "fixed-point.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -100,6 +102,16 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
+    // ADDED ATTRIBUTES
+
+    int64_t wakeup_tick;                /* When in a suspended state, the tick to wakeup. */
+    int initial_priority;               /* Default priority. */
+    struct list locks_held;             /* Locks currently acquired by the thread. */
+    struct lock *waiting_lock;          /* Lock thread is trying to acquire (if any). */
+
+    int nice;                           /* Used in mlfqs. */
+    real recent_cpu;                    /* Used in mlfqs. */
   };
 
 /* If false (default), use round-robin scheduler.
@@ -138,4 +150,14 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+// ADDED FUNCTIONS
+void thread_sleep(int64_t);
+void thread_wakeups(int64_t);
+
+bool priority_more(const struct list_elem *, const struct list_elem *, void *);
+void thread_donate_priority(struct thread*);
+void thread_release_resource();
+
+void thread_compute_load_avg();
+void thread_compute_recent_cpu(struct thread *);
 #endif /* threads/thread.h */
